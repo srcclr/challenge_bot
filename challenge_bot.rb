@@ -9,18 +9,6 @@ require './logging.rb'
 
 include Logging
 
-@stopped = 0
-trap ("SIGINT") { puts "Ctrl+C caught. Stopping gracefully."; @stopped += 1 }
-
-# remove this to send out tweets
-debug_mode
-
-# remove this to update the db
-#no_update
-
-# remove this to get less output when running
-#verbose
-
 def process_incoming(handler)
     puts "Processing incoming tweets ..." if bot.debug_mode
     replies do |tweet|
@@ -46,12 +34,14 @@ def process_outgoing(handler)
     handler.handle
 end
 
-
 db = DB.new
 incoming_handler = IncomingHandler.new(db)
 outgoing_handler = OutgoingHandler.new(db, client)
 
 logger.debug "Started challenge bot!"
+
+stopped = 0
+trap ("SIGINT") { puts "Ctrl+C caught. Stopping gracefully."; stopped += 1 }
 
 begin
     second = 0
@@ -59,7 +49,7 @@ begin
         process_incoming(incoming_handler) if second % 60 == 0
         process_outgoing(outgoing_handler) if second % 5 == 0
         second = 0 if second >= 60
-        break if @stopped > 0
+        break if stopped > 0
         sleep 1
         second += 1
     end
@@ -67,9 +57,8 @@ rescue => e
     msg = "Got #{e.class} exception. Retry in 60 seconds.\nException: #{e}\n#{e.backtrace}"
     puts msg
     logger.warning msg
-    30.times { sleep 1; exit(0) if @stopped > 0 }
+    30.times { sleep 1; exit(0) if stopped > 0 }
     puts "Retry in 30 seconds..."
-    30.times { sleep 1; exit(0) if @stopped > 0 }
-
+    30.times { sleep 1; exit(0) if stopped > 0 }
     retry
 end

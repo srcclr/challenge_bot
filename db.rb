@@ -52,7 +52,7 @@ class DB
         if sub.nil?
             Submission.insert(:user_id => user_id, :challenge_id => challenge_id, :hash => hash, :is_correct => is_correct)
         else
-            # Use update rather than updating + save to trigger on update mysql
+            # Use model#update to fire trigger, model#save doesn't work
             submission_count = sub[:submission_count] += 1
             sub.update(:submission_count => submission_count, :is_correct => is_correct, :hash => hash)
         end
