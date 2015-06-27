@@ -1,11 +1,10 @@
 require 'securerandom'
 require 'digest/sha1'
-require './db'
 
-class Handler
+class IncomingHandler
 
-    def initialize
-        @db = DB.new
+    def initialize(db)
+        @db = db
     end
 
     def handle(message, sender)
@@ -72,6 +71,7 @@ private
 
 end
 
-h = Handler.new
-h.handle('submit challenge1 ee2c442da95adbf2541c088f19cb05c9f2734999', 'caleb')
+#db = DB.new
+#h = IncomingHandler.new(db)
+#h.handle('submit challenge1 ee2c442da95adbf2541c088f19cb05c9f2734999', 'caleb')
 # echo -n "There is no spoon.16fb58474b8fbdb2ed56c58d326f9334" | openssl sha1

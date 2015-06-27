@@ -40,6 +40,7 @@ GEM
     rspec-support (3.3.0)
     sequel (4.23.0)
     simple_oauth (0.2.0)
+    thread (0.2.0)
     thread_safe (0.3.5)
     twitter (5.8.0)
       addressable (~> 2.3)
@@ -61,6 +62,7 @@ DEPENDENCIES
   mysql (~> 2.9)
   rspec (~> 3.0)
   sequel (~> 4.23)
+  thread (~> 0.2)
 
 BUNDLED WITH
    1.10.5

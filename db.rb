@@ -8,6 +8,7 @@ class DB
         config = YAML::load_file(File.join(__dir__, 'challenge_bot.yml'))
         @conn = Sequel.connect(config[:db_uri])
         require './models/submission'
+        require './models/direct_message'
     end
 
     def get_user_by_username(username)
@@ -31,16 +32,14 @@ class DB
     end
 
     def queue_dm(username, message)
-        queue = @conn[:dm_queue]
-        queue.insert(:username => username, :message => message)
+        DirectMessage.insert(:username => username, :message => message)
     end
 
     def pop_dm
-        queue = @conn[:dm_queue]
-        dm = queue.first
+        dm = DirectMessage.first
         return nil if dm.nil?
 
-        queue[:id => dm[:id]].delete
+        dm.destroy
         dm
     end
 
