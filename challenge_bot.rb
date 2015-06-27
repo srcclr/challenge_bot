@@ -5,6 +5,9 @@ require 'chatterbot/dsl'
 require './db'
 require './incoming_handler'
 require './outgoing_handler'
+require './logging.rb'
+
+include Logging
 
 @stopped = 0
 trap ("SIGINT") { puts "Ctrl+C caught. Stopping gracefully."; @stopped += 1 }
@@ -23,7 +26,7 @@ def process_incoming(handler)
     replies do |tweet|
         text = tweet.text
         sender = tweet_user(text)[1..-1]
-        handler.handle(text, sender)
+        handler.handle(sender, 'twitter', text)
     end
 
     puts "Processing direct messages ..." if bot.debug_mode
@@ -32,7 +35,7 @@ def process_incoming(handler)
         text = m.text
         sender = m.sender.screen_name
         since_id m.id if since_id.nil? || m.id > since_id
-        handler.handle(text, m.sender.screen_name)
+        handler.handle(m.sender.screen_name, 'twitter', text)
     end
 
     update_config
@@ -48,6 +51,8 @@ db = DB.new
 incoming_handler = IncomingHandler.new(db)
 outgoing_handler = OutgoingHandler.new(db, client)
 
+logger.debug "Started challenge bot!"
+
 begin
     second = 0
     loop do
@@ -59,8 +64,9 @@ begin
         second += 1
     end
 rescue => e
-    puts "Got exception. Retry in 60 seconds. Exception:\n#{e}"
-    puts e.backtrace
+    msg = "Got #{e.class} exception. Retry in 60 seconds.\nException: #{e}\n#{e.backtrace}"
+    puts msg
+    logger.warning msg
     30.times { sleep 1; exit(0) if @stopped > 0 }
     puts "Retry in 30 seconds..."
     30.times { sleep 1; exit(0) if @stopped > 0 }

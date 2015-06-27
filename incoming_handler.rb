@@ -1,60 +1,61 @@
 require 'securerandom'
 require 'digest/sha1'
+require './logging.rb'
 
 class IncomingHandler
+
+    include Logging
 
     def initialize(db)
         @db = db
     end
 
-    def handle(message, sender)
-        puts "FROM #{sender}: handling - #{message}"
+    def handle(username, user_type, message)
         message = strip_names(message).strip
-        puts "stripped: '#{message}'"
+        puts "Handling #{username} (#{user_type}): #{message}"
 
         case message
-        when /send(?: me)?(?: my)?(?: submission)? code/
-            registerUser(sender)
+        when /(?:send|give)(?: me)?(?: my)?(?: submission)? code/
+            registerUser(username, user_type)
         when /submit ([\-_a-zA-Z0-9]+) ([a-zA-Z0-9]+)/
-            submitSolution(sender, $1, $2)
+            submitSolution(username, user_type, $1, $2,)
         end
     end
 
-    def registerUser(username)
-        # TODO: usernames are unique, when adding e-mail users, need to check for that
-        code = @db.get_code(username)
+    def registerUser(username, user_type)
+        code = @db.get_code(username, user_type)
         if code.nil?
             code = generate_code
-            @db.register_user(username, code)
+            @db.register_user(username, user_type, code)
         end
 
-        @db.queue_dm(username, "your submission code is #{code}")
+        @db.queue_dm(username, user_type, "your submission code is #{code}")
     end
 
-    def submitSolution(username, challenge, hash)
+    def submitSolution(username, user_type, challenge, hash)
         challenge = @db.get_challenge(challenge)
         if challenge.nil?
             msg = "invalid challenge: #{challenge}"[0..140]
-            @db.queue_dm(username, msg)
+            @db.queue_dm(username, user_type, msg)
             return
         end
 
         if Date.parse(challenge[:date_begin]) > Date.today
-            @db.queue_dm(username, "not started #{challenge}")
+            @db.queue_dm(username, user_type, "not started #{challenge}")
             return
         end
 
-        user = @db.get_user_by_username(username)
+        user = @db.get_user(username, user_type)
         if user.nil?
-            registerUser(username)
-            user = @db.get_user_by_username(username)
+            registerUser(username, user_type)
+            user = @db.get_user(username, user_type)
         end
 
         is_correct = check_submission(user[:code], challenge[:solution], hash)
         @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash)
 
         if Date.parse(challenge[:date_end]) <= Date.today
-            @db.queue_dm(username, "#{challenge} submission is #{is_correct ? 'CORRECT' : 'incorrect'}")
+            @db.queue_dm(username, user_type, "#{challenge} submission is #{is_correct ? 'CORRECT' : 'incorrect'}")
         end
     end
 
@@ -79,7 +80,10 @@ private
 
 end
 
+#require './db'
 #db = DB.new
 #h = IncomingHandler.new(db)
-#h.handle('submit challenge1 ee2c442da95adbf2541c088f19cb05c9f2734999', 'caleb_fenton')
+#h.handle('caleb_fenton', 'twitter', 'give me my code')
+
+#h.handle('caleb_fenton', 'twitter', 'submit challenge1 ee2c442da95adbf2541c088f19cb05c9f2734999')
 # echo -n "There is no spoon.16fb58474b8fbdb2ed56c58d326f9334" | openssl sha1

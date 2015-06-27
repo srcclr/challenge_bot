@@ -1,38 +1,46 @@
 require 'sequel'
 require 'mysql'
 require 'yaml'
+require './logging.rb'
 
 class DB
+
+    include Logging
 
     def initialize
         config = YAML::load_file(File.join(__dir__, 'challenge_bot.yml'))
         @conn = Sequel.connect(config[:db_uri])
-        require './models/submission'
-        require './models/direct_message'
+        Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file }
     end
 
-    def get_user_by_username(username)
-        @conn[:users][:username => username]
+    def get_user_type_id(user_type)
+        @conn[:user_types][:name => user_type][:id]
+    end
+
+    def get_user(username, user_type)
+        user_type_id = get_user_type_id(user_type)
+        @conn[:users][:username => username, :user_type_id => user_type_id]
     end
 
     def get_challenge(name)
         @conn[:challenges][:name => name]
     end
 
-    def get_code(username)
-        user = get_user_by_username(username)
+    def get_code(username, user_type)
+        user = get_user(username, user_type)
         return nil if user.nil?
 
         user[:code]
     end
 
-    def register_user(username, code)
+    def register_user(username, user_type, code)
         users = @conn[:users]
-        users.insert(:username => username, :code => code)
+        user_type_id = get_user_type_id(user_type)
+        users.insert(:username => username, :user_type_id => user_type_id, :code => code)
     end
 
-    def queue_dm(username, message)
-        DirectMessage.insert(:username => username, :message => message)
+    def queue_dm(username, user_type, message)
+        DirectMessage.insert(:username => username, :user_type => user_type, :message => message)
     end
 
     def peek_dm
