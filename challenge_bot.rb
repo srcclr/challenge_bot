@@ -2,7 +2,7 @@
 
 require 'rubygems'
 require 'chatterbot/dsl'
-require 'securerandom'
+require './handler'
 
 # remove this to send out tweets
 debug_mode
@@ -16,7 +16,7 @@ verbose
 # Load configuration
 # refresh interval
 
-def do_loop
+def process_loop(handler)
     loop do
         puts "Processing incoming tweets ..."
         replies do |tweet|
@@ -43,41 +43,10 @@ def do_loop
     end
 end
 
-def handle(message, sender)
-    puts "FROM #{sender}: handling - #{message}"
-    message = strip_names(message).strip
-    puts "stripped: '#{message}'"
-
-    case message
-    when /send(?: me)?(?: my)?(?: submission)? code/
-        handleGenerateCode(sender)
-    when /submit ([^ ]+) ([a-zA-Z0-9])+/
-        handleSubmitAnswer(sender, $1, $2)
-    end
-end
-
-def handleGenerateCode(username)
-    # Check if code exists for username
-    # If it exists, return it
-    # Else, generate_code and save it
-    puts "HANDLE GENERATE CODE #{username}"
-end
-
-def handleSubmitAnswer(username, challenge, answer_hash)
-    puts "HANDLE SUBMIT ANSWER #{username}, #{challenge}, #{answer_hash}"
-end
-
-def strip_names(message)
-    message.gsub(/@[^ ]+ /, '')
-end
-
-def generate_code
-    random_string = SecureRandom.hex
-end
-
+handler = Handler.new
 
 begin
-    do_loop
+    process_loop(handler)
 rescue => e
     puts "Got exception. Waiting 60 seconds and retrying. Exception:\n#{e}"
     sleep 60
