@@ -1,15 +1,18 @@
 
 class OutgoingHandler
 
-    def initialize(db)
+    def initialize(db, client)
         @db = db
+        @client = client
     end
 
     def handle
-        msg = @db.pop_dm
-        return if msg.nil?
+        dm = @db.peek_dm
+        return if dm.nil?
 
-        puts "SEND #{msg[:username]}: #{msg[:message]}"
+        puts "SEND #{dm[:username]}: #{dm[:message]}"
+        client.create_direct_message(dm[:username], dm[:message])
+        dm.destroy
     end
 
 end

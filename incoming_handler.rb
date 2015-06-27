@@ -14,13 +14,13 @@ class IncomingHandler
 
         case message
         when /send(?: me)?(?: my)?(?: submission)? code/
-            handleRegisterUser(sender)
+            registerUser(sender)
         when /submit ([\-_a-zA-Z0-9]+) ([a-zA-Z0-9]+)/
-            handleSubmitSolution(sender, $1, $2)
+            submitSolution(sender, $1, $2)
         end
     end
 
-    def handleRegisterUser(username)
+    def registerUser(username)
         # TODO: usernames are unique, when adding e-mail users, need to check for that
         code = @db.get_code(username)
         if code.nil?
@@ -31,23 +31,31 @@ class IncomingHandler
         @db.queue_dm(username, "your submission code is #{code}")
     end
 
-    def handleSubmitSolution(username, challenge, hash)
-        puts "HANDLE SUBMIT SOLUTION #{username}, #{challenge}, #{hash}"
-
+    def submitSolution(username, challenge, hash)
         challenge = @db.get_challenge(challenge)
         if challenge.nil?
-            @db.queue_dm(username, 'invalid #{challenge}')
+            msg = "invalid challenge: #{challenge}"[0..140]
+            @db.queue_dm(username, msg)
+            return
+        end
+
+        if Date.parse(challenge[:date_begin]) > Date.today
+            @db.queue_dm(username, "not started #{challenge}")
             return
         end
 
         user = @db.get_user_by_username(username)
         if user.nil?
-            handleRegisterUser(username)
+            registerUser(username)
             user = @db.get_user_by_username(username)
         end
 
         is_correct = check_submission(user[:code], challenge[:solution], hash)
         @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash)
+
+        if Date.parse(challenge[:date_end]) <= Date.today
+            @db.queue_dm(username, "#{challenge} submission is #{is_correct ? 'CORRECT' : 'incorrect'}")
+        end
     end
 
 private
@@ -73,5 +81,5 @@ end
 
 #db = DB.new
 #h = IncomingHandler.new(db)
-#h.handle('submit challenge1 ee2c442da95adbf2541c088f19cb05c9f2734999', 'caleb')
+#h.handle('submit challenge1 ee2c442da95adbf2541c088f19cb05c9f2734999', 'caleb_fenton')
 # echo -n "There is no spoon.16fb58474b8fbdb2ed56c58d326f9334" | openssl sha1

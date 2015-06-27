@@ -35,12 +35,8 @@ class DB
         DirectMessage.insert(:username => username, :message => message)
     end
 
-    def pop_dm
-        dm = DirectMessage.first
-        return nil if dm.nil?
-
-        dm.destroy
-        dm
+    def peek_dm
+        DirectMessage.first
     end
 
     def add_or_update_submission(user_id, challenge_id, is_correct, hash)
@@ -57,4 +53,4 @@ class DB
 end
 
 #db = DB.new
-#puts db.pop_dm
+#puts db.peek_dm

@@ -46,7 +46,7 @@ end
 
 db = DB.new
 incoming_handler = IncomingHandler.new(db)
-outgoing_handler = OutgoingHandler.new(db)
+outgoing_handler = OutgoingHandler.new(db, client)
 
 begin
     second = 0
