@@ -22,6 +22,7 @@ GEM
     memoizable (0.4.2)
       thread_safe (~> 0.3, >= 0.3.1)
     multipart-post (2.0.0)
+    mysql (2.9.1)
     naught (1.0.0)
     oauth (0.4.7)
     rspec (3.3.0)
@@ -37,6 +38,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.3.0)
     rspec-support (3.3.0)
+    sequel (4.23.0)
     simple_oauth (0.2.0)
     thread_safe (0.3.5)
     twitter (5.8.0)
@@ -56,7 +58,9 @@ PLATFORMS
 
 DEPENDENCIES
   chatterbot (~> 1.0)
+  mysql (~> 2.9)
   rspec (~> 3.0)
+  sequel (~> 4.23)
 
 BUNDLED WITH
    1.10.5

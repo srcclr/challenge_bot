@@ -2,6 +2,7 @@
 
 require 'rubygems'
 require 'chatterbot/dsl'
+require 'securerandom'
 
 class ChallengeBot
 
@@ -20,7 +21,6 @@ class ChallengeBot
     end
 
     def start
-        #since_id = 0
         begin
             do_loop
         rescue => e
@@ -40,17 +40,19 @@ private
             puts "Processing incoming tweets ..."
             replies do |tweet|
               text = tweet.text
-              puts "tweet received: #{text}"
-              handle(text)
+              sender = tweet_user(text)[1..-1]
+              puts "tweet received: #{sender} - #{text}"
+              handle(text, sender)
             end
 
             puts "Processing direct messages ..."
             dms = client.direct_messages_received(:since_id => since_id)
             dms.each do |m|
                 text = m.text
+                sender = m.sender.screen_name
                 since_id m.id if since_id.nil? || m.id > since_id
-                puts "dm received: #{text}"
-                handle(text)
+                puts "dm received: #{sender} - #{text}"
+                handle(text, m.sender.screen_name)
             end
 
             update_config
@@ -60,15 +62,36 @@ private
         end
     end
 
-    def handle(message)
-        puts "handling message - #{message}"
+    def handle(message, sender)
+        puts "FROM #{sender}: handling - #{message}"
+        message = strip_names(message).strip
+        puts "stripped: '#{message}'"
 
+        case message
+        when 'send me my code', 'send me my submission code', 'send submission code', 'send code'
+            handleGenerateCode(sender)
+        when /submit ([^ ]+) ([a-zA-Z0-9])+/
+            handleSubmitAnswer(sender, $1, $2)
+        end
     end
 
     def handleGenerateCode(username)
+        # Check if code exists for username
+        # If it exists, return it
+        # Else, generate_code and save it
+        puts "HANDLE GENERATE CODE #{username}"
     end
 
     def handleSubmitAnswer(username, challenge, answer_hash)
+        puts "HANDLE SUBMIT ANSWER #{username}, #{challenge}, #{answer_hash}"
+    end
+
+    def strip_names(message)
+        message.gsub(/@[^ ]+ /, '')
+    end
+
+    def generate_code
+        random_string = SecureRandom.hex
     end
 
 end
