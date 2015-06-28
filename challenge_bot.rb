@@ -8,13 +8,12 @@ include Logging
 
 debug_mode
 
+
 def process_incoming(handler)
     puts "Processing incoming tweets ..." if bot.debug_mode
     replies do |tweet|
         text = tweet.text
         sender = tweet.user.screen_name
-        since_id (tweet.id + 1) if since_id.nil? || tweet.id > since_id
-        #xfollow(tweet.user) # need to follow to dm
         handler.handle(sender, 'twitter', text)
     end
 
@@ -30,6 +29,24 @@ def process_incoming(handler)
     update_config
 end
 
+def stream_incoming(handler)
+    puts "Beginning streaming tweets and direct messages ..."
+    streaming do
+        replies do |tweet|
+            text = tweet.text
+            sender = tweet.user.screen_name
+            handler.handle(sender, 'twitter', text)
+        end
+
+        direct_message do |m|
+            text = m.text
+            sender = m.sender.screen_name
+            since_id m.id if since_id.nil? || m.id > since_id
+            handler.handle(m.sender.screen_name, 'twitter', text)
+        end
+    end
+end
+
 def process_outgoing(handler)
     puts "Processing outgoing messages ..." if bot.debug_mode
     handler.handle
@@ -39,21 +56,29 @@ db = DB.new
 incoming_handler = IncomingHandler.new(db)
 outgoing_handler = OutgoingHandler.new(db, client)
 
+stopped = 0
+trap ("SIGINT") do
+    puts "Ctrl+C caught. Stopping gracefully."
+    stopped += 1
+end
+
 logger.debug "Started challenge bot!"
 
-stopped = 0
-trap ("SIGINT") { puts "Ctrl+C caught. Stopping gracefully."; stopped += 1 }
-
 begin
+    process_incoming(incoming_handler)
+    threads = []
+    threads << Thread.new { stream_incoming(incoming_handler) }
     second = 0
     loop do
-        process_incoming(incoming_handler) if second % 60 == 0
         process_outgoing(outgoing_handler) if second % 5 == 0
         second = 0 if second >= 60
         break if stopped > 0
         sleep 1
         second += 1
     end
+
+    threads.each(&:kill)
+    update_config
 rescue => e
     msg = "Got #{e.class} exception. Retry in 60 seconds.\nException: #{e}\n#{e.backtrace.join("\n")}"
     puts msg
@@ -63,3 +88,5 @@ rescue => e
     30.times { sleep 1; exit(0) if stopped > 0 }
     retry
 end
+
+logger.debug "Gracefully stopped challenge bot"

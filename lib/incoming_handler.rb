@@ -8,6 +8,7 @@ class IncomingHandler
 
     def initialize(db)
         @db = db
+        @stopped = 0
     end
 
     def handle(username, user_type, message)
@@ -21,6 +22,10 @@ class IncomingHandler
             submitSolution(username, user_type, $1, $2,)
         when /(?:send|give|tell)(?: me)?(?: a)? secret/
             sendSecret(username, user_type)
+        when /do you have stairs in your house?/i
+            @db.queue_dm(username, user_type, 'i am protected.')
+        when /i am protected/i
+            @db.queue_dm(username, user_type, 'the internet makes you stupid.')
         end
     end
 
