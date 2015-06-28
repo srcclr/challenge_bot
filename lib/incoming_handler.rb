@@ -83,12 +83,11 @@ private
 
 end
 
-require_relative 'db'
-db = DB.new
-h = IncomingHandler.new(db)
-h.handle('caleb_fenton', 'twitter', 'give me my code')
-h.handle('caleb_fenton', 'twitter', 'send me a secret')
-
+#require_relative 'db'
+#db = DB.new
+#h = IncomingHandler.new(db)
+#h.handle('caleb_fenton', 'twitter', 'give me my code')
+#h.handle('caleb_fenton', 'twitter', 'send me a secret')
 #h.handle('caleb_fenton', 'twitter', 'submit challenge1 864bcc000d5a158b81d63fc5233813bdc0f53a3c')
 #h.handle('caleb_fenton', 'twitter', 'submit challenge2 864bcc000d5a158b81d63fc5233813bdc0f53a3c')
 #h.handle('caleb_fenton', 'twitter', 'submit challenge3 864bcc000d5a158b81d63fc5233813bdc0f53a3c')

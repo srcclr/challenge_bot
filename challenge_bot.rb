@@ -6,11 +6,15 @@ Dir[File.dirname(__FILE__) + '/lib/*.rb'].each {|file| require file }
 
 include Logging
 
+debug_mode
+
 def process_incoming(handler)
     puts "Processing incoming tweets ..." if bot.debug_mode
     replies do |tweet|
         text = tweet.text
-        sender = tweet_user(text)[1..-1]
+        sender = tweet.user.screen_name
+        since_id (tweet.id + 1) if since_id.nil? || tweet.id > since_id
+        #xfollow(tweet.user) # need to follow to dm
         handler.handle(sender, 'twitter', text)
     end
 
@@ -51,9 +55,9 @@ begin
         second += 1
     end
 rescue => e
-    msg = "Got #{e.class} exception. Retry in 60 seconds.\nException: #{e}\n#{e.backtrace}"
+    msg = "Got #{e.class} exception. Retry in 60 seconds.\nException: #{e}\n#{e.backtrace.join("\n")}"
     puts msg
-    logger.warning msg
+    logger.warn msg
     30.times { sleep 1; exit(0) if stopped > 0 }
     puts "Retry in 30 seconds..."
     30.times { sleep 1; exit(0) if stopped > 0 }
