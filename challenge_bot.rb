@@ -8,6 +8,7 @@ include Logging
 
 debug_mode
 
+$my_name = 'cherlerngebert1'
 
 def process_incoming(handler)
     puts "Processing incoming tweets ..." if bot.debug_mode
@@ -23,7 +24,8 @@ def process_incoming(handler)
         text = m.text
         sender = m.sender.screen_name
         since_id m.id if since_id.nil? || m.id > since_id
-        handler.handle(m.sender.screen_name, 'twitter', text)
+        next if sender.eql?($my_name)
+        handler.handle(sender, 'twitter', text)
     end
 
     update_config
@@ -42,7 +44,8 @@ def stream_incoming(handler)
             text = m.text
             sender = m.sender.screen_name
             since_id m.id if since_id.nil? || m.id > since_id
-            handler.handle(m.sender.screen_name, 'twitter', text)
+            next if sender.eql?($my_name)
+            handler.handle(sender, 'twitter', text)
         end
     end
 end
