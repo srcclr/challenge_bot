@@ -2,10 +2,7 @@
 
 require 'rubygems'
 require 'chatterbot/dsl'
-require './db'
-require './incoming_handler'
-require './outgoing_handler'
-require './logging.rb'
+Dir[File.dirname(__FILE__) + '/lib/*.rb'].each {|file| require file }
 
 include Logging
 

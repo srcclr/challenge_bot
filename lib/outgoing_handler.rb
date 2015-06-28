@@ -1,4 +1,4 @@
-require './logging.rb'
+require_relative 'logging'
 
 class OutgoingHandler
 
