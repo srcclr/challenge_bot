@@ -75,14 +75,13 @@ end
 logger.debug "Started challenge bot!"
 
 begin
-    raise 'test error'
-    #process_incoming(incoming_handler)
+    process_incoming(incoming_handler)
     threads = []
-    #threads << Thread.new { stream_incoming(incoming_handler) }
+    threads << Thread.new { stream_incoming(incoming_handler) }
     second = 0
     puts "Begin processing outgoing message queue ..."
     loop do
-        #process_outgoing(outgoing_handler) if second % 5 == 0
+        process_outgoing(outgoing_handler) if second % 5 == 0
         second = 0 if second >= 60
         break if stopped > 0
         sleep 1
