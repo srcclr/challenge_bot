@@ -15,7 +15,7 @@ module Logging
     end
 
     def configure_logger_for(classname)
-      logger = Logger.new('../bot.log', 'weekly')
+      logger = Logger.new(File.dirname(__FILE__) + '/../bot.log', 'weekly')
       logger.progname = classname
       logger
     end
