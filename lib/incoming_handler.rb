@@ -6,30 +6,35 @@ class IncomingHandler
 
     include Logging
 
+    HELP_PAGE = 'http://www.google.com'
+
     def initialize(db)
         @db = db
-        @stopped = 0
     end
 
     def handle(username, user_type, message)
         message = strip_names(message).strip
-        puts "Handling #{username} (#{user_type}): #{message}"
+        puts "Handle #{username} (#{user_type}): #{message}"
 
         case message
-        when /(?:send|give|tell)(?: me)?(?: my)?(?: submission)? code/
-            registerUser(username, user_type)
-        when /submit ([\-_a-zA-Z0-9]+) ([a-zA-Z0-9]+)/
-            submitSolution(username, user_type, $1, $2,)
-        when /(?:send|give|tell)(?: me)?(?: a)? secret/
-            sendSecret(username, user_type)
-        when /do you have stairs in your house?/i
+        when /\A(?:send|give|tell)(?: me)?(?: my)?(?: submission)? code\z/i
+            register_user(username, user_type)
+        when /\Asubmit ([\-_a-zA-Z0-9]+) ([a-zA-Z0-9]+)\z/i
+            submit_answer(username, user_type, $1, $2)
+        when /\A(?:send|give|tell)(?: me)?(?: a)? secret\z/i
+            get_secret(username, user_type)
+        when /\Ado you have stairs in your house?\z/i
             @db.queue_dm(username, user_type, 'i am protected.')
-        when /i am protected/i
-            @db.queue_dm(username, user_type, 'the internet makes you stupid.')
+        when /\Ai am protected\.?\z/i
+            @db.queue_dm(username, user_type, 'the internet makes you stupid. :D')
+        when /\Ahelp(?: me)?\z/
+            get_help(username, user_type)
         end
     end
 
-    def registerUser(username, user_type)
+private
+
+    def register_user(username, user_type)
         code = @db.get_code(username, user_type)
         if code.nil?
             code = generate_code
@@ -39,7 +44,7 @@ class IncomingHandler
         @db.queue_dm(username, user_type, "your submission code is #{code}")
     end
 
-    def submitSolution(username, user_type, challenge_name, hash)
+    def submit_answer(username, user_type, challenge_name, hash)
         challenge = @db.get_challenge(challenge_name)
         if challenge.nil?
             msg = "invalid challenge: #{challenge_name}"[0..140]
@@ -54,7 +59,7 @@ class IncomingHandler
 
         user = @db.get_user(username, user_type)
         if user.nil?
-            registerUser(username, user_type)
+            register_user(username, user_type)
             user = @db.get_user(username, user_type)
         end
 
@@ -66,12 +71,15 @@ class IncomingHandler
         end
     end
 
-    def sendSecret(username, user_type)
+    def get_secret(username, user_type)
         secret = @db.get_secret
         @db.queue_dm(username, user_type, secret) if secret
     end
 
-private
+    def get_help(username, user_type)
+        help = "commands i understand are listed here: #{HELP_PAGE}"
+        @db.queue_dm(username, uesr_type, help)
+    end
 
     def strip_names(message)
         message.gsub(/@[^ ]+ /, '')
