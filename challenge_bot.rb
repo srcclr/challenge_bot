@@ -8,9 +8,7 @@ include Logging
 
 #debug_mode
 
-$my_name = 'cherlerngebert1'
-
-def process_incoming(handler)
+def process_incoming(handler, bot_name)
     puts "Processing incoming tweets ..."
     replies do |tweet|
         text = tweet.text
@@ -24,14 +22,14 @@ def process_incoming(handler)
         text = m.text
         sender = m.sender.screen_name
         since_id m.id if since_id.nil? || m.id > since_id
-        next if sender.eql?($my_name)
+        next if sender.eql?(bot_name)
         handler.handle(sender, 'twitter', text)
     end
 
     update_config
 end
 
-def stream_incoming(handler)
+def stream_incoming(handler, bot_name)
     puts "Beginning streaming tweets and direct messages ..."
     streaming do
         replies do |tweet|
@@ -44,7 +42,7 @@ def stream_incoming(handler)
             text = m.text
             sender = m.sender.screen_name
             since_id m.id if since_id.nil? || m.id > since_id
-            next if sender.eql?($my_name)
+            next if sender.eql?(bot_name)
             handler.handle(sender, 'twitter', text)
         end
     end
@@ -72,25 +70,29 @@ trap ("SIGINT") do
     end
 end
 
-logger.debug "Started challenge bot!"
+config = db.get_config
+logger.debug "Started challenge bot - #{config[:bot_name]}!"
 
 begin
-    process_incoming(incoming_handler)
+    process_incoming(incoming_handler, config[:bot_name])
     threads = []
-    threads << Thread.new { stream_incoming(incoming_handler) }
+    threads << Thread.new { stream_incoming(incoming_handler, config[:bot_name]) }
     second = 0
     puts "Begin processing outgoing message queue ..."
     loop do
-        process_outgoing(outgoing_handler) if second % 5 == 0
-        second = 0 if second >= 60
+        process_dm = second % config[:dm_queue_interval] == 0
+        process_outgoing(outgoing_handler) if process_dm
+
+        second += 1
+        second = 0 if second >= 300
+
         break if stopped > 0
         sleep 1
-        second += 1
     end
 
     threads.each(&:kill)
 rescue => e
-    msg = "Got #{e.class} exception. Retry in 60 seconds.\nException: #{e}\n#{e.backtrace.join("\n")}"
+    msg = "Exception: #{e.class} - #{e}. Retry in 60 seconds!\n#{e.backtrace.join("\n")}"
     puts msg
     logger.warn msg
     60.downto(1) do |s|
@@ -103,4 +105,4 @@ ensure
     update_config
 end
 
-logger.debug "Gracefully stopped challenge bot"
+logger.debug "Gracefully stopped challenge bot - #{config[:bot_name]}"

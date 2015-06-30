@@ -7,8 +7,6 @@ class IncomingHandler
 
     include Logging
 
-    # TODO: add correct help page
-    HELP_PAGE = 'http://www.google.com'
     CHALLENGE_NAME = '[\-_a-zA-Z0-9]+'
 
     def initialize(db)
@@ -88,9 +86,19 @@ private
             return
         end
 
+        if challenge[:date_begin] > Date.today
+            msg = "#{challenge_name} has not started. begins #{challenge[:date_begin]}"
+            @db.queue_dm(username, user_type, msg)
+            return
+        end
+
         if challenge[:date_end] <= Date.today
             sub = @db.get_submission(username, user_type, challenge[:id])
-            msg = "#{challenge_name} = #{sub[:hash]} and is #{sub[:is_correct] ? 'CORRECT' : 'incorrect'}"
+            if sub
+                msg = "#{challenge_name} = #{sub[:hash]} and is #{sub[:is_correct] ? 'CORRECT' : 'incorrect'}"
+            else
+                msg = "you have not submitted an answer for #{challenge_name}"
+            end
         else
             msg = "#{challenge_name} is still ongoing. challenge ends #{challenge[:date_end]}"
         end
@@ -108,13 +116,14 @@ private
             send_unknown_challenge(username, user_type, challenge_name)
             return
         end
-        info = "#{challenge_name} can be viewed @ #{challenge[:url]}"
+        info = "#{challenge_name} can be viewed @ #{challenge[:url]}. start=#{challenge[:date_begin]}, end=#{challenge[:date_end]}"
         @db.queue_dm(username, user_type, info)
     end
 
     def get_help(username, user_type)
-        help = "commands i understand are listed here: #{HELP_PAGE}"
-        @db.queue_dm(username, uesr_type, help)
+        url = @db.get_config[:help_url]
+        help = "commands i understand are listed here: #{url}"
+        @db.queue_dm(username, user_type, help)
     end
 
     def send_unknown_challenge(username, user_type, challenge_name)

@@ -8,9 +8,13 @@ class DB
     include Logging
 
     def initialize
-        config = YAML::load_file(File.join(__dir__, '../challenge_bot.yml'))
-        @conn = Sequel.connect(config[:db_uri])
+        db_config = YAML::load_file(File.join(__dir__, '../challenge_bot.yml'))
+        @conn = Sequel.connect(db_config[:db_uri])
         Dir[File.dirname(__FILE__) + '/../models/*.rb'].each { |f| require f }
+    end
+
+    def get_config
+        @conn[:config_custom].first
     end
 
     def get_user_type_id(user_type)
