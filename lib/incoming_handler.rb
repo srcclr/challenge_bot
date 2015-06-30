@@ -67,8 +67,12 @@ private
         @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash)
 
         if challenge[:date_end] <= Date.today
-            @db.queue_dm(username, user_type, "#{challenge_name} submission is #{is_correct ? 'CORRECT' : 'incorrect'}")
+            msg = "#{challenge_name} submission is #{is_correct ? 'CORRECT' : 'incorrect'}"
+        else
+            msg = "#{challenge_name} answer recieved. challenge ends #{challenge[:date_end]}"
         end
+
+        @db.queue_dm(username, user_type, msg)
     end
 
     def get_secret(username, user_type)
