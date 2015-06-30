@@ -24,6 +24,8 @@ class IncomingHandler
             register_user(username, user_type)
         when /\Asubmit (#{CHALLENGE_NAME}) ([a-zA-Z0-9]+)\z/i
             submit_answer(username, user_type, $1, $2)
+        when /\Acheck (#{CHALLENGE_NAME})\z/i
+            check_answer(username, user_type, $1)
         when /\A(?:send|give|tell)(?: me)?(?: a)? secret\z/i
             get_secret(username, user_type)
         when /\Ado you have stairs in your house?\z/i
@@ -52,10 +54,7 @@ private
     def submit_answer(username, user_type, challenge_name, hash)
         challenge = @db.get_challenge(challenge_name)
         if challenge.nil?
-            # Don't respond with arbitrary, attacker controlled data like challenge_name.
-            # After this check, it's known to exist and is safe to emit.
-            msg = "unknown challenge :( "[0..140]
-            @db.queue_dm(username, user_type, msg)
+            send_unknown_challenge(username, user_type, challenge_name)
             return
         end
 
@@ -82,6 +81,22 @@ private
         @db.queue_dm(username, user_type, msg)
     end
 
+    def check_answer(username, user_type, challenge_name)
+        challenge = @db.get_challenge(challenge_name)
+        if challenge.nil?
+            send_unknown_challenge(username, user_type, challenge_name)
+            return
+        end
+
+        if challenge[:date_end] <= Date.today
+            sub = @db.get_submission(username, user_type, challenge[:id])
+            msg = "#{challenge_name} = #{sub[:hash]} and is #{sub[:is_correct] ? 'CORRECT' : 'incorrect'}"
+        else
+            msg = "#{challenge_name} is still ongoing. challenge ends #{challenge[:date_end]}"
+        end
+        @db.queue_dm(username, user_type, msg)
+    end
+
     def get_secret(username, user_type)
         secret = @db.get_secret
         @db.queue_dm(username, user_type, secret) if secret
@@ -89,6 +104,10 @@ private
 
     def get_challenge_info(username, user_type, challenge_name)
         challenge = @db.get_challenge(challenge_name)
+        if challenge.nil?
+            send_unknown_challenge(username, user_type, challenge_name)
+            return
+        end
         info = "#{challenge_name} can be viewed @ #{challenge[:url]}"
         @db.queue_dm(username, user_type, info)
     end
@@ -96,6 +115,13 @@ private
     def get_help(username, user_type)
         help = "commands i understand are listed here: #{HELP_PAGE}"
         @db.queue_dm(username, uesr_type, help)
+    end
+
+    def send_unknown_challenge(username, user_type, challenge_name)
+        # Don't respond with arbitrary, attacker controlled data like challenge_name.
+        # After this check, it's known to exist and is safe to emit.
+        msg = "unknown challenge :( "[0..140]
+        @db.queue_dm(username, user_type, msg)
     end
 
     def strip_names(message)

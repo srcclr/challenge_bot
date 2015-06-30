@@ -52,6 +52,12 @@ class DB
         @conn[:secrets].order{ rand{} }.first[:secret]
     end
 
+    def get_submission(username, user_type, challenge_id)
+        user = get_user(username, user_type)
+        user_id = user[:id]
+        Submission[:user_id => user_id, :challenge_id => challenge_id]
+    end
+
     def add_or_update_submission(user_id, challenge_id, is_correct, hash)
         sub = Submission[:user_id => user_id, :challenge_id => challenge_id]
         if sub.nil?
