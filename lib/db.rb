@@ -23,7 +23,7 @@ class DB
     end
 
     def get_challenge(name)
-        @conn[:challenges][:name => name]
+        Challenge[:name => name]
     end
 
     def get_code(username, user_type)

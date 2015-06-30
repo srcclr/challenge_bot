@@ -1,12 +1,15 @@
 require 'securerandom'
 require 'digest/sha1'
+require 'json'
 require_relative 'logging'
 
 class IncomingHandler
 
     include Logging
 
+    # TODO: add correct help page
     HELP_PAGE = 'http://www.google.com'
+    CHALLENGE_NAME = '[\-_a-zA-Z0-9]+'
 
     def initialize(db)
         @db = db
@@ -19,7 +22,7 @@ class IncomingHandler
         case message
         when /\A(?:send|give|tell)(?: me)?(?: my)?(?: submission)? code\z/i
             register_user(username, user_type)
-        when /\Asubmit ([\-_a-zA-Z0-9]+) ([a-zA-Z0-9]+)\z/i
+        when /\Asubmit (#{CHALLENGE_NAME}) ([a-zA-Z0-9]+)\z/i
             submit_answer(username, user_type, $1, $2)
         when /\A(?:send|give|tell)(?: me)?(?: a)? secret\z/i
             get_secret(username, user_type)
@@ -27,6 +30,8 @@ class IncomingHandler
             @db.queue_dm(username, user_type, 'i am protected.')
         when /\Ai am protected\.?\z/i
             @db.queue_dm(username, user_type, 'the internet makes you stupid. :D')
+        when /\A(?:send|give|tell)(?: me)? (#{CHALLENGE_NAME}) info\z/i
+            get_challenge_info(username, user_type, $1)
         when /\Ahelp(?: me)?\z/
             get_help(username, user_type)
         end
@@ -47,13 +52,16 @@ private
     def submit_answer(username, user_type, challenge_name, hash)
         challenge = @db.get_challenge(challenge_name)
         if challenge.nil?
-            msg = "invalid challenge: #{challenge_name}"[0..140]
+            # Don't respond with arbitrary, attacker controlled data like challenge_name.
+            # After this check, it's known to exist and is safe to emit.
+            msg = "unknown challenge :( "[0..140]
             @db.queue_dm(username, user_type, msg)
             return
         end
 
         if challenge[:date_begin] > Date.today
-            @db.queue_dm(username, user_type, "not started #{challenge_name}")
+            msg = "#{challenge_name} has not started. begins #{challenge[:date_begin]}"
+            @db.queue_dm(username, user_type, msg)
             return
         end
 
@@ -63,7 +71,7 @@ private
             user = @db.get_user(username, user_type)
         end
 
-        is_correct = check_submission(user[:code], challenge[:solution], hash)
+        is_correct = check_submission(user[:code], challenge[:solutions], hash)
         @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash)
 
         if challenge[:date_end] <= Date.today
@@ -71,13 +79,18 @@ private
         else
             msg = "#{challenge_name} answer recieved. challenge ends #{challenge[:date_end]}"
         end
-
         @db.queue_dm(username, user_type, msg)
     end
 
     def get_secret(username, user_type)
         secret = @db.get_secret
         @db.queue_dm(username, user_type, secret) if secret
+    end
+
+    def get_challenge_info(username, user_type, challenge_name)
+        challenge = @db.get_challenge(challenge_name)
+        info = "#{challenge_name} can be viewed @ #{challenge[:url]}"
+        @db.queue_dm(username, user_type, info)
     end
 
     def get_help(username, user_type)
@@ -93,9 +106,14 @@ private
         random_string = SecureRandom.hex
     end
 
-    def check_submission(code, solution, hash)
-        correct = Digest::SHA1.hexdigest("#{solution}#{code}")
-        correct.eql?(hash)
+    def check_submission(code, solutions_str, hash)
+        solutions = JSON.parse(solutions_str)
+        solutions.each do |solution|
+            correct = Digest::SHA1.hexdigest("#{solution}#{code}")
+            return true if correct.eql?(hash)
+        end
+
+        return false
     end
 
 end
