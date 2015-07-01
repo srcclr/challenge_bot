@@ -5,8 +5,6 @@ Some responses, particularly requesting your submission code, are in the form of
 ## Commands
 There's a tiny bit of flexibility for most commands. This is to make them easier to remember. Verbs like `send` are usually interchangable with `tell` and `give`. Also, words like `me` and `my` are usually optional.
 
-Commands:
-
 * `send me my submission code` - sends randomly-generated submission code, must be following the bot to get this message!
 * `submit {challenge name} {answer}` - accepts submission, confirms if answer is correct if challenge is over
 * `send me {challenge name} info` - sends you the start and end dates for a challenge
