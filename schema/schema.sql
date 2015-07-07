@@ -1,16 +1,3 @@
-# ************************************************************
-# Sequel Pro SQL dump
-# Version 4096
-#
-# http://www.sequelpro.com/
-# http://code.google.com/p/sequel-pro/
-#
-# Host: localhost (MySQL 5.6.25)
-# Database: challenge_bot
-# Generation Time: 2015-06-28 01:56:34 +0000
-# ************************************************************
-
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
@@ -29,11 +16,26 @@ CREATE TABLE `challenges` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL DEFAULT '',
   `url` varchar(250) NOT NULL DEFAULT '',
-  `solution` text NOT NULL,
+  `solutions` text NOT NULL,
   `date_begin` date NOT NULL,
   `date_end` date NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+# Dump of table config_custom
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `config_custom`;
+
+CREATE TABLE `config_custom` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `bot_name` varchar(30) NOT NULL DEFAULT '',
+  `help_url` varchar(200) NOT NULL DEFAULT '',
+  `dm_queue_interval` tinyint(11) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -61,7 +63,8 @@ DROP TABLE IF EXISTS `secrets`;
 CREATE TABLE `secrets` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `secret` text NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_secret` (`secret`(30))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
