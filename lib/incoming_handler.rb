@@ -26,7 +26,7 @@ class IncomingHandler
             check_answer(username, user_type, $1)
         when /\A(?:send|give|tell)(?: me)?(?: a)? secret\z/i
             get_secret(username, user_type)
-        when /\Ado you have stairs in your house?\z/i
+        when /\Ado you have stairs in your house\??\z/i
             @db.queue_dm(username, user_type, 'i am protected.')
         when /\Ai am protected\.?\z/i
             @db.queue_dm(username, user_type, 'the internet makes you stupid. :D')
