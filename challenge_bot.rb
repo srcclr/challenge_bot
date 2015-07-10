@@ -53,6 +53,8 @@ def process_outgoing(handler)
     handler.handle
 end
 
+RETRY_INTERVAL = 60
+
 db = DB.new
 incoming_handler = IncomingHandler.new(db)
 outgoing_handler = OutgoingHandler.new(db, client)
@@ -84,7 +86,10 @@ begin
         process_outgoing(outgoing_handler) if process_dm
 
         second += 1
-        second = 0 if second >= 300
+        if second >= (60 * 60)
+            logger.debug "Challenge bot is alive and well!"
+            second = 0
+        end
 
         break if stopped > 0
         sleep 1
@@ -95,13 +100,19 @@ rescue => e
     msg = "Exception: #{e.class} - #{e}. Retry in 60 seconds!\n#{e.backtrace.join("\n")}"
     puts msg
     logger.warn msg
-    60.downto(1) do |s|
+    RETRY_INTERVAL.downto(1) do |s|
         sleep 1
-        puts "Retry in 30 seconds" if s == 30
+        if s % 30 == 0
+            msg = "Retry in #{s} seconds ..."
+            puts msg
+            logger.warn msg
+        end
+
         break if stopped > 0
     end
     retry unless stopped > 0
 ensure
+    logger.debug 'Updating configuration'
     update_config
 end
 
