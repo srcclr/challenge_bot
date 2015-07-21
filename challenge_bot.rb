@@ -13,6 +13,7 @@ def process_incoming(handler, bot_name)
     replies do |tweet|
         text = tweet.text
         sender = tweet.user.screen_name
+        client.follow(sender)
         handler.handle(sender, 'twitter', text)
     end
 
@@ -35,6 +36,7 @@ def stream_incoming(handler, bot_name)
         replies do |tweet|
             text = tweet.text
             sender = tweet.user.screen_name
+            client.follow(sender)
             handler.handle(sender, 'twitter', text)
         end
 
