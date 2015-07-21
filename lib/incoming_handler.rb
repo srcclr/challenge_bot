@@ -32,6 +32,8 @@ class IncomingHandler
             @db.queue_dm(username, user_type, 'the internet makes you stupid. :D')
         when /\A(?:send|give|tell)(?: me)? (#{CHALLENGE_NAME}) info\z/i
             get_challenge_info(username, user_type, $1)
+        when /\Ahelp (#{CHALLENGE_NAME})\z/i
+            get_challenge_info(username, user_type, $1)
         when /\Ahelp(?: me)?\z/
             get_help(username, user_type)
         end
@@ -69,11 +71,12 @@ private
         end
 
         is_correct = check_submission(user[:code], challenge[:solutions], hash)
-        @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash)
-
         if challenge[:date_end] <= Date.today
             msg = "#{challenge_name} submission is #{is_correct ? 'CORRECT' : 'incorrect'}"
         else
+            # Don't allow users to change submissions after challenge is complete.
+            # This way score histories are preserved.
+            @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash)
             msg = "#{challenge_name} answer recieved. challenge ends #{challenge[:date_end]}"
         end
         @db.queue_dm(username, user_type, msg)
