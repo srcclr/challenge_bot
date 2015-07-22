@@ -9,7 +9,7 @@ include Logging
 #debug_mode
 
 def process_incoming(handler, bot_name)
-    puts "Processing incoming tweets ..."
+    puts 'Processing incoming tweets ...'
     replies do |tweet|
         text = tweet.text
         sender = tweet.user.screen_name
@@ -17,8 +17,8 @@ def process_incoming(handler, bot_name)
         handler.handle(sender, 'twitter', text)
     end
 
-    puts "Processing direct messages ..."
-    dms = client.direct_messages_received(:since_id => since_id)
+    puts 'Processing direct messages ...'
+    dms = client.direct_messages_received(since_id: since_id)
     dms.each do |m|
         text = m.text
         sender = m.sender.screen_name
@@ -31,7 +31,7 @@ def process_incoming(handler, bot_name)
 end
 
 def stream_incoming(handler, bot_name)
-    puts "Beginning streaming tweets and direct messages ..."
+    puts 'Beginning streaming tweets and direct messages ...'
     streaming do
         replies do |tweet|
             text = tweet.text
@@ -62,12 +62,12 @@ incoming_handler = IncomingHandler.new(db)
 outgoing_handler = OutgoingHandler.new(db, client)
 
 stopped = 0
-trap ("SIGINT") do
+trap('SIGINT') do
     if stopped == 0
-        puts "Ctrl+C caught. Stopping gracefully."
+        puts 'Ctrl+C caught. Stopping gracefully.'
         stopped += 1
     elsif stopped == 1
-        puts "Press Ctrl+C again to force immediate exit!"
+        puts 'Press Ctrl+C again to force immediate exit!'
         stopped += 1
     elsif stopped > 1
         exit 0
@@ -75,21 +75,21 @@ trap ("SIGINT") do
 end
 
 config = db.get_config
-logger.debug "Started challenge bot - #{config[:bot_name]}!"
+logger.debug "Started ChallengeBot - #{config[:bot_name]}!"
 
 begin
     process_incoming(incoming_handler, config[:bot_name])
     threads = []
     threads << Thread.new { stream_incoming(incoming_handler, config[:bot_name]) }
     second = 0
-    puts "Begin processing outgoing message queue ..."
+    puts 'Begin processing outgoing message queue ...'
     loop do
         process_dm = second % config[:dm_queue_interval] == 0
         process_outgoing(outgoing_handler) if process_dm
 
         second += 1
         if second >= (60 * 60)
-            logger.debug "Challenge bot is alive and well!"
+            logger.debug 'ChallengeBot is alive and well!'
             second = 0
         end
 
@@ -105,7 +105,7 @@ rescue => e
     RETRY_INTERVAL.downto(1) do |s|
         sleep 1
         if s % 30 == 0
-            msg = "Retry in #{s} seconds ..."
+            msg = 'Retry in #{s} seconds ...'
             puts msg
             logger.warn msg
         end
@@ -118,4 +118,4 @@ ensure
     update_config
 end
 
-logger.debug "Gracefully stopped challenge bot - #{config[:bot_name]}"
+logger.debug "Gracefully stopped ChallengeBot - #{config[:bot_name]}"

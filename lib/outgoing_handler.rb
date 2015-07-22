@@ -1,7 +1,6 @@
 require_relative 'logging'
 
 class OutgoingHandler
-
     include Logging
 
     def initialize(db, client)
@@ -37,5 +36,4 @@ class OutgoingHandler
         # TODO: raise exception on failure
         puts "Sending e-mail to #{username}: #{message}"
     end
-
 end

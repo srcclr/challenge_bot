@@ -4,7 +4,6 @@ require 'json'
 require_relative 'logging'
 
 class IncomingHandler
-
     include Logging
 
     CHALLENGE_NAME = '[\-_a-zA-Z0-9]+'
@@ -21,9 +20,9 @@ class IncomingHandler
         when /\A(?:send|give|tell)(?: me)?(?: my)?(?: submission)? code\z/i
             register_user(username, user_type)
         when /\Asubmit (#{CHALLENGE_NAME}) ([a-zA-Z0-9]+)\z/i
-            submit_answer(username, user_type, $1, $2)
+            submit_answer(username, user_type, Regexp.last_match[1], Regexp.last_match[2])
         when /\Acheck (#{CHALLENGE_NAME})\z/i
-            check_answer(username, user_type, $1)
+            check_answer(username, user_type, Regexp.last_match[1])
         when /\A(?:send|give|tell)(?: me)?(?: a)? secret\z/i
             get_secret(username, user_type)
         when /\Ado you have stairs in your house\??\z/i
@@ -31,15 +30,15 @@ class IncomingHandler
         when /\Ai am protected\.?\z/i
             @db.queue_dm(username, user_type, 'the internet makes you stupid. :D')
         when /\A(?:send|give|tell)(?: me)? (#{CHALLENGE_NAME}) info\z/i
-            get_challenge_info(username, user_type, $1)
+            get_challenge_info(username, user_type, Regexp.last_match[1])
         when /\Ahelp (#{CHALLENGE_NAME})\z/i
-            get_challenge_info(username, user_type, $1)
+            get_challenge_info(username, user_type, Regexp.last_match[1])
         when /\Ahelp(?: me)?\z/
             get_help(username, user_type)
         end
     end
 
-private
+    private
 
     def register_user(username, user_type)
         code = @db.get_code(username, user_type)
@@ -130,9 +129,9 @@ private
     end
 
     def send_unknown_challenge(username, user_type, challenge_name)
-        # Don't respond with arbitrary, attacker controlled data like challenge_name.
+        # Don't respond with arbitrary, attacker-controlled data like challenge_name.
         # After this check, it's known to exist and is safe to emit.
-        msg = "unknown challenge :( "[0..140]
+        msg = 'unknown challenge :( '[0..140]
         @db.queue_dm(username, user_type, msg)
     end
 
@@ -141,7 +140,7 @@ private
     end
 
     def generate_code
-        random_string = SecureRandom.hex
+        SecureRandom.hex
     end
 
     def check_submission(code, solutions_str, hash)
@@ -151,18 +150,11 @@ private
             return true if correct.eql?(hash)
         end
 
-        return false
+        false
     end
-
 end
 
 #require_relative 'db'
 #db = DB.new
 #h = IncomingHandler.new(db)
 #h.handle('caleb_fenton', 'twitter', 'give me my code')
-#h.handle('caleb_fenton', 'twitter', 'send me a secret')
-#h.handle('caleb_fenton', 'twitter', 'submit challenge1 864bcc000d5a158b81d63fc5233813bdc0f53a3c')
-#h.handle('caleb_fenton', 'twitter', 'submit challenge2 864bcc000d5a158b81d63fc5233813bdc0f53a3c')
-#h.handle('caleb_fenton', 'twitter', 'submit challenge3 864bcc000d5a158b81d63fc5233813bdc0f53a3c')
-#h.handle('caleb_fenton', 'twitter', 'submit notexist 864bcc000d5a158b81d63fc5233813bdc0f53a3c')
-# echo -n "There is no spoon.16fb58474b8fbdb2ed56c58d326f9334" | openssl sha1

@@ -1,7 +1,6 @@
 require 'logger'
 
 module Logging
-
   def logger
     @logger ||= Logging.logger_for(self.class.name)
   end
@@ -20,5 +19,4 @@ module Logging
       logger
     end
   end
-
 end
