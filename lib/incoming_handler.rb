@@ -123,9 +123,8 @@ class IncomingHandler
     end
 
     def get_help(username, user_type)
-        url = @db.get_config[:help_url]
-        help = "commands i understand are listed here: #{url}"
-        @db.queue_dm(username, user_type, help)
+        help_text = @db.get_config[:help_text]
+        @db.queue_dm(username, user_type, help_text)
     end
 
     def send_unknown_challenge(username, user_type, challenge_name)
