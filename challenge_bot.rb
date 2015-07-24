@@ -13,6 +13,7 @@ def process_incoming(handler, bot_name)
     replies do |tweet|
         text = tweet.text
         sender = tweet.user.screen_name
+        next if sender.eql?(bot_name)
         client.follow(sender)
         handler.handle(sender, 'twitter', text)
     end
@@ -24,6 +25,7 @@ def process_incoming(handler, bot_name)
         sender = m.sender.screen_name
         since_id m.id if since_id.nil? || m.id > since_id
         next if sender.eql?(bot_name)
+        client.follow(sender)
         handler.handle(sender, 'twitter', text)
     end
 
@@ -36,7 +38,7 @@ def stream_incoming(handler, bot_name)
         replies do |tweet|
             text = tweet.text
             sender = tweet.user.screen_name
-            client.follow(sender)
+            next if sender.eql?(bot_name)
             handler.handle(sender, 'twitter', text)
         end
 
@@ -45,6 +47,7 @@ def stream_incoming(handler, bot_name)
             sender = m.sender.screen_name
             since_id m.id if since_id.nil? || m.id > since_id
             next if sender.eql?(bot_name)
+            client.follow(sender)
             handler.handle(sender, 'twitter', text)
         end
     end
@@ -54,8 +57,6 @@ def process_outgoing(handler)
     #puts "Processing outgoing messages ..."
     handler.handle
 end
-
-RETRY_INTERVAL = 60
 
 db = DB.new
 incoming_handler = IncomingHandler.new(db)
@@ -102,10 +103,10 @@ rescue => e
     msg = "Exception: #{e.class} - #{e}. Retry in 60 seconds!\n#{e.backtrace.join("\n")}"
     puts msg
     logger.warn msg
-    RETRY_INTERVAL.downto(1) do |s|
+    config[:retry_interval].downto(1) do |s|
         sleep 1
         if s % 30 == 0
-            msg = 'Retry in #{s} seconds ...'
+            msg = "Retry in #{s} seconds ..."
             puts msg
             logger.warn msg
         end
