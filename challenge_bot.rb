@@ -14,7 +14,7 @@ def process_incoming(handler, bot_name)
         text = tweet.text
         sender = tweet.user.screen_name
         next if sender.eql?(bot_name)
-        client.follow(sender)
+        #client.follow(sender)
         handler.handle(sender, 'twitter', text)
     end
 
@@ -25,7 +25,7 @@ def process_incoming(handler, bot_name)
         sender = m.sender.screen_name
         since_id m.id if since_id.nil? || m.id > since_id
         next if sender.eql?(bot_name)
-        client.follow(sender)
+        #client.follow(sender)
         handler.handle(sender, 'twitter', text)
     end
 
@@ -39,6 +39,7 @@ def stream_incoming(handler, bot_name)
             text = tweet.text
             sender = tweet.user.screen_name
             next if sender.eql?(bot_name)
+            #client.follow(sender)
             handler.handle(sender, 'twitter', text)
         end
 
@@ -47,7 +48,7 @@ def stream_incoming(handler, bot_name)
             sender = m.sender.screen_name
             since_id m.id if since_id.nil? || m.id > since_id
             next if sender.eql?(bot_name)
-            client.follow(sender)
+            #client.follow(sender)
             handler.handle(sender, 'twitter', text)
         end
     end
