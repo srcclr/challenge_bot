@@ -7,6 +7,7 @@ Dir[File.dirname(__FILE__) + '/lib/*.rb'].each { |f| require f }
 include Logging
 
 #debug_mode
+HEARTBEAT_INTERVAL = 60 * 60 # Every hour
 
 def process_incoming(handler, bot_name)
     puts 'Processing incoming tweets ...'
@@ -55,8 +56,18 @@ def stream_incoming(handler, bot_name)
 end
 
 def process_outgoing(handler)
-    #puts "Processing outgoing messages ..."
-    handler.handle
+    puts 'Begin processing outgoing message queue ...'
+    second = 0
+    loop do
+        second += 1
+        process_dm = second % config[:dm_queue_interval] == 0
+        if process_dm
+            handler.handle
+            second = 0
+        end
+
+        sleep 1
+    end
 end
 
 db = DB.new
@@ -80,17 +91,17 @@ config = db.get_config
 logger.debug "Started ChallengeBot - #{config[:bot_name]}!"
 
 begin
+    # Deal with anything sent to us while turned off
     process_incoming(incoming_handler, config[:bot_name])
+
     threads = []
     threads << Thread.new { stream_incoming(incoming_handler, config[:bot_name]) }
-    second = 0
-    puts 'Begin processing outgoing message queue ...'
-    loop do
-        process_dm = second % config[:dm_queue_interval] == 0
-        process_outgoing(outgoing_handler) if process_dm
+    threads << Thread.new { process_outgoing(outgoing_handler) }
 
+    second = 0
+    loop do
         second += 1
-        if second >= (60 * 60)
+        if second >= HEARTBEAT_INTERVAL
             logger.debug 'ChallengeBot is alive and well!'
             second = 0
 
@@ -106,7 +117,7 @@ begin
 
     threads.each(&:kill)
 rescue => e
-    msg = "Exception: #{e.class} - #{e}. Retry in 60 seconds!\n#{e.backtrace.join("\n")}"
+    msg = "Exception: #{e.class} - #{e}. Retry in #{config[:retry_interval]} seconds!\n#{e.backtrace.join("\n")}"
     puts msg
     logger.warn msg
     config[:retry_interval].downto(1) do |s|
