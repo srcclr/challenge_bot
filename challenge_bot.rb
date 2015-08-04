@@ -93,6 +93,11 @@ begin
         if second >= (60 * 60)
             logger.debug 'ChallengeBot is alive and well!'
             second = 0
+
+            # bit of a hack, but need to make sure config gets updated
+            # since it keeps track of messages we've seen and responded to
+            # if there's a failure, it could mean sending messages repeatedly
+            update_config
         end
 
         break if stopped > 0
@@ -116,7 +121,7 @@ rescue => e
     end
     retry unless stopped > 0
 ensure
-    logger.debug 'Updating configuration'
+    logger.debug 'Saving configuration'
     update_config
 end
 
