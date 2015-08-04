@@ -23,7 +23,8 @@ class OutgoingHandler
     end
 
     def send_dm(username, message)
-        puts "Sending DM to #{username}: #{message}"
+        logger.debug "Sending DM to #{username}: #{message}"
+
         begin
             client.create_direct_message(username, message)
         rescue Twitter::Error::Forbidden => e
@@ -34,6 +35,6 @@ class OutgoingHandler
 
     def send_email(username, message)
         # TODO: raise exception on failure
-        puts "Sending e-mail to #{username}: #{message}"
+        logger.debug "Sending e-mail to #{username}: #{message}"
     end
 end

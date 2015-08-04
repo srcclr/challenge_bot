@@ -14,7 +14,7 @@ class IncomingHandler
 
     def handle(username, user_type, message)
         message = strip_names(message).strip
-        puts "Handle #{username} (#{user_type}): #{message}"
+        logger.debug "Handle #{username} (#{user_type}): #{message}"
 
         case message
         when /\A(?:send|give|tell)(?: me)?(?: my)?(?: submission)? code\z/i
