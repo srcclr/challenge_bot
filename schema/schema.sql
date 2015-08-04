@@ -19,6 +19,7 @@ CREATE TABLE `challenges` (
   `solutions` text NOT NULL,
   `date_begin` date NOT NULL,
   `date_end` date NOT NULL,
+  `exclude_leaderboard` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -33,8 +34,9 @@ DROP TABLE IF EXISTS `config_custom`;
 CREATE TABLE `config_custom` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `bot_name` varchar(30) NOT NULL DEFAULT '',
-  `help_url` varchar(200) NOT NULL DEFAULT '',
-  `dm_queue_interval` tinyint(11) NOT NULL,
+  `help_text` varchar(140) NOT NULL DEFAULT '',
+  `dm_queue_interval` tinyint(11) unsigned NOT NULL DEFAULT '5',
+  `retry_interval` tinyint(11) unsigned NOT NULL DEFAULT '5',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -116,6 +118,7 @@ CREATE TABLE `users` (
   `username` varchar(50) NOT NULL DEFAULT '',
   `code` varchar(50) NOT NULL DEFAULT '',
   `date_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `exclude_leaderboard` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_user_type_id_username` (`user_type_id`,`username`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`user_type_id`) REFERENCES `user_types` (`id`)
