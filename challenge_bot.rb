@@ -55,12 +55,12 @@ def stream_incoming(handler, bot_name)
     end
 end
 
-def process_outgoing(handler)
+def process_outgoing(handler, dm_queue_interval)
     puts 'Begin processing outgoing message queue ...'
     second = 0
     loop do
         second += 1
-        process_dm = second % config[:dm_queue_interval] == 0
+        process_dm = second % dm_queue_interval == 0
         if process_dm
             handler.handle
             second = 0
@@ -96,7 +96,7 @@ begin
 
     threads = []
     threads << Thread.new { stream_incoming(incoming_handler, config[:bot_name]) }
-    threads << Thread.new { process_outgoing(outgoing_handler) }
+    threads << Thread.new { process_outgoing(outgoing_handler, config[:dm_queue_interval]) }
 
     second = 0
     loop do
