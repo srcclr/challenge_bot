@@ -61,14 +61,16 @@ class DB
         Submission[user_id: user_id, challenge_id: challenge_id]
     end
 
-    def add_or_update_submission(user_id, challenge_id, is_correct, hash)
+    def add_or_update_submission(user_id, challenge_id, is_correct, hash, created_at)
         sub = Submission[user_id: user_id, challenge_id: challenge_id]
         if sub.nil?
-            Submission.insert(user_id: user_id, challenge_id: challenge_id, hash: hash, is_correct: is_correct)
+            Submission.insert(user_id: user_id, challenge_id: challenge_id, is_correct: is_correct,
+                hash: hash, message_created_at: created_at)
         else
             # Use model#update to fire trigger, model#save doesn't work
             submission_count = sub[:submission_count] += 1
-            sub.update(submission_count: submission_count, is_correct: is_correct, hash: hash)
+            sub.update(submission_count: submission_count, is_correct: is_correct,
+                hash: hash, message_created_at: created_at)
         end
     end
 end

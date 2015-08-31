@@ -85,6 +85,7 @@ CREATE TABLE `submissions` (
   `is_correct` tinyint(1) unsigned NOT NULL,
   `date_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `message_created_at` datetime DEFAULT NULL COMMENT 'Time twitter / e-mail server created message',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_user_id_challenge_id` (`user_id`,`challenge_id`),
   KEY `challenge_id` (`challenge_id`),

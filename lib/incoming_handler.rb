@@ -12,17 +12,20 @@ class IncomingHandler
         @db = db
     end
 
-    def handle(username, user_type, message)
+    def handle(username, user_type, message, created_at)
         message = strip_names(message).strip
-        logger.debug "Handle #{username} (#{user_type}): #{message}"
+        logger.debug "Handle #{username} [#{user_type}] @#{created_at} : #{message}"
 
         case message
         when /\A(?:send|give|tell)(?: me)?(?: my)?(?: submission)? code\z/i
             register_user(username, user_type)
         when /\Asubmit (#{CHALLENGE_NAME}) ([a-zA-Z0-9]+)\z/i
-            submit_answer(username, user_type, Regexp.last_match[1], Regexp.last_match[2])
+            challenge_name = Regexp.last_match[1]
+            hash = Regexp.last_match[2]
+            submit_answer(username, user_type, challenge_name, hash, created_at)
         when /\Acheck (#{CHALLENGE_NAME})\z/i
-            check_answer(username, user_type, Regexp.last_match[1])
+            challenge_name = Regexp.last_match[1]
+            check_answer(username, user_type, challenge_name)
         when /\A(?:send|give|tell)(?: me)?(?: a)? secret\z/i
             get_secret(username, user_type)
         when /\Ado you have stairs in your house\??\z/i
@@ -30,9 +33,11 @@ class IncomingHandler
         when /\Ai am protected\.?\z/i
             @db.queue_dm(username, user_type, 'the internet makes you stupid. :D')
         when /\A(?:send|give|tell)(?: me)? (#{CHALLENGE_NAME}) info\z/i
-            get_challenge_info(username, user_type, Regexp.last_match[1])
+            challenge_name = Regexp.last_match[1]
+            get_challenge_info(username, user_type, challenge_name)
         when /\Ahelp (#{CHALLENGE_NAME})\z/i
-            get_challenge_info(username, user_type, Regexp.last_match[1])
+            challenge_name = Regexp.last_match[1]
+            get_challenge_info(username, user_type, challenge_name)
         when /\Ahelp(?: me)?\z/
             get_help(username, user_type)
         end
@@ -50,7 +55,7 @@ class IncomingHandler
         @db.queue_dm(username, user_type, "your submission code is #{code}")
     end
 
-    def submit_answer(username, user_type, challenge_name, hash)
+    def submit_answer(username, user_type, challenge_name, hash, created_at)
         challenge = @db.get_challenge(challenge_name)
         if challenge.nil?
             send_unknown_challenge(username, user_type, challenge_name)
@@ -75,7 +80,7 @@ class IncomingHandler
         else
             # Don't allow users to change submissions after challenge is complete.
             # This way score histories are preserved.
-            @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash)
+            @db.add_or_update_submission(user[:id], challenge[:id], is_correct, hash, created_at)
             msg = "#{challenge_name} answer recieved. challenge ends #{challenge[:date_end]}"
         end
         @db.queue_dm(username, user_type, msg)

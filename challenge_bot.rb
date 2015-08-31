@@ -15,20 +15,22 @@ STATE_HALTING = 2
 def process_incoming(handler, bot_name)
     puts 'Processing incoming tweets ...'
     replies do |tweet|
-        text = tweet.text
         sender = tweet.user.screen_name
+        text = tweet.text
+        created_at = tweet.created_at
         next if sender.eql?(bot_name)
-        handler.handle(sender, 'twitter', text)
+        handler.handle(sender, 'twitter', text, created_at)
     end
 
     puts 'Processing direct messages ...'
     dms = client.direct_messages_received(since_id: since_id)
-    dms.each do |m|
-        text = m.text
-        sender = m.sender.screen_name
-        since_id m.id if since_id.nil? || m.id > since_id
+    dms.each do |dm|
+        sender = dm.sender.screen_name
+        since_id(dm.id) if since_id.nil? || dm.id > since_id
         next if sender.eql?(bot_name)
-        handler.handle(sender, 'twitter', text)
+        text = dm.text
+        created_at = tweet.created_at
+        handler.handle(sender, 'twitter', text, created_at)
     end
 
     update_config
@@ -44,12 +46,13 @@ def stream_incoming(handler, bot_name)
             handler.handle(sender, 'twitter', text)
         end
 
-        direct_message do |m|
-            text = m.text
-            sender = m.sender.screen_name
-            since_id m.id if since_id.nil? || m.id > since_id
+        direct_message do |dm|
+            sender = dm.sender.screen_name
+            since_id(dm.id) if since_id.nil? || dm.id > since_id
             next if sender.eql?(bot_name)
-            handler.handle(sender, 'twitter', text)
+            text = dm.text
+            created_at = dm.created_at
+            handler.handle(sender, 'twitter', text, created_at)
         end
     end
 end
