@@ -18,7 +18,7 @@ def process_incoming(handler, bot_name)
         sender = tweet.user.screen_name
         next if sender.eql?(bot_name)
         text = tweet.text
-        created_at = tweet.created_at
+        created_at = tweet.created_at.dup.localtime
         handler.handle(sender, 'twitter', text, created_at)
     end
 
@@ -29,7 +29,7 @@ def process_incoming(handler, bot_name)
         since_id(dm.id) if since_id.nil? || dm.id > since_id
         next if sender.eql?(bot_name)
         text = dm.text
-        created_at = dm.created_at
+        created_at = dm.created_at.dup.localtime
         handler.handle(sender, 'twitter', text, created_at)
     end
 
@@ -43,7 +43,7 @@ def stream_incoming(handler, bot_name)
             sender = tweet.user.screen_name
             next if sender.eql?(bot_name)
             text = tweet.text
-            created_at = tweet.created_at
+            created_at = tweet.created_at.dup.localtime
             handler.handle(sender, 'twitter', text)
         end
 
@@ -52,7 +52,7 @@ def stream_incoming(handler, bot_name)
             since_id(dm.id) if since_id.nil? || dm.id > since_id
             next if sender.eql?(bot_name)
             text = dm.text
-            created_at = dm.created_at
+            created_at = dm.created_at.dup.localtime
             handler.handle(sender, 'twitter', text, created_at)
         end
     end
