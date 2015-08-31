@@ -13,7 +13,7 @@ STATE_STOPPING = 1
 STATE_HALTING = 2
 
 def process_incoming(handler, bot_name)
-    puts 'Processing incoming tweets ...'
+    puts '[*] Processing tweets'
     replies do |tweet|
         sender = tweet.user.screen_name
         next if sender.eql?(bot_name)
@@ -21,8 +21,9 @@ def process_incoming(handler, bot_name)
         created_at = tweet.created_at.dup.localtime
         handler.handle(sender, 'twitter', text, created_at)
     end
+    puts '[*] Finished processing tweets'
 
-    puts 'Processing direct messages ...'
+    puts '[*] Processing direct messages'
     dms = client.direct_messages_received(since_id: since_id)
     dms.each do |dm|
         sender = dm.sender.screen_name
@@ -32,12 +33,13 @@ def process_incoming(handler, bot_name)
         created_at = dm.created_at.dup.localtime
         handler.handle(sender, 'twitter', text, created_at)
     end
+    puts '[*] Finished processing direct messages'
 
     update_config
 end
 
 def stream_incoming(handler, bot_name)
-    puts 'Beginning streaming tweets and direct messages ...'
+    puts '[*] Streaming tweets and direct messages'
     streaming do
         replies do |tweet|
             sender = tweet.user.screen_name
@@ -59,7 +61,7 @@ def stream_incoming(handler, bot_name)
 end
 
 def process_outgoing(handler, dm_queue_interval)
-    puts 'Begin processing outgoing message queue ...'
+    puts '[*] Watching outgoing message queue'
     second = 0
     loop do
         second += 1
@@ -81,10 +83,10 @@ outgoing_handler = OutgoingHandler.new(db, client)
 state = 0
 trap('SIGINT') do
     if state == STATE_RUNNING
-        puts 'Ctrl+C caught. Stopping gracefully.'
+        puts '[!] Ctrl+C caught. Stopping gracefully.'
         state = STATE_STOPPING
     elsif state == STATE_STOPPING
-        puts 'Press Ctrl+C again to force immediate exit!'
+        puts '[!!] Press Ctrl+C again to force immediate exit!'
         state = STATE_HALTING
     elsif state >= STATE_HALTING
         exit 0
@@ -92,7 +94,7 @@ trap('SIGINT') do
 end
 
 config = db.get_config
-logger.debug "Started ChallengeBot - #{config[:bot_name]}!"
+logger.debug "[*] Started ChallengeBot - #{config[:bot_name]}!"
 
 begin
     # Deal with anything sent to us while turned off
@@ -106,7 +108,7 @@ begin
     loop do
         second += 1
         if second >= HEARTBEAT_INTERVAL
-            logger.debug 'ChallengeBot is alive and well!'
+            logger.debug '[.] ChallengeBot is alive and well!'
             second = 0
 
             # bit of a hack, but need to make sure config gets updated
@@ -121,13 +123,13 @@ begin
 
     threads.each(&:kill)
 rescue => e
-    msg = "Exception: #{e.class} - #{e}. Retry in #{config[:retry_interval]} seconds!\n#{e.backtrace.join("\n")}"
+    msg = "[!] Exception: #{e.class} - #{e}. Retry in #{config[:retry_interval]} seconds!\n#{e.backtrace.join("\n")}"
     puts msg
     logger.warn msg
     config[:retry_interval].downto(1) do |s|
         sleep 1
         if s % 30 == 0
-            msg = "Retry in #{s} seconds ..."
+            msg = "[.] Retry in #{s} seconds"
             puts msg
             logger.warn msg
         end
