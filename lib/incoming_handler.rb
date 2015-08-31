@@ -56,6 +56,12 @@ class IncomingHandler
     end
 
     def submit_answer(username, user_type, challenge_name, hash, created_at)
+        user = @db.get_user(username, user_type)
+        if user.nil?
+            register_user(username, user_type)
+            user = @db.get_user(username, user_type)
+        end
+
         challenge = @db.get_challenge(challenge_name)
         if challenge.nil?
             send_unknown_challenge(username, user_type, challenge_name)
@@ -66,12 +72,6 @@ class IncomingHandler
             msg = "#{challenge_name} has not started. begins #{challenge[:date_begin]}"
             @db.queue_dm(username, user_type, msg)
             return
-        end
-
-        user = @db.get_user(username, user_type)
-        if user.nil?
-            register_user(username, user_type)
-            user = @db.get_user(username, user_type)
         end
 
         is_correct = check_submission(user[:code], challenge[:solutions], hash)
