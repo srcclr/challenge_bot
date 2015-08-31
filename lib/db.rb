@@ -74,7 +74,3 @@ class DB
         end
     end
 end
-
-#db = DB.new
-#puts db.get_secret
-#puts db.peek_dm

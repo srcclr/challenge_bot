@@ -13,7 +13,7 @@ STATE_STOPPING = 1
 STATE_HALTING = 2
 
 def process_incoming(handler, bot_name)
-    puts '[*] Processing tweets'
+    logger.debug '[*] Processing tweets'
     replies do |tweet|
         sender = tweet.user.screen_name
         next if sender.eql?(bot_name)
@@ -21,9 +21,9 @@ def process_incoming(handler, bot_name)
         created_at = tweet.created_at.dup.localtime
         handler.handle(sender, 'twitter', text, created_at)
     end
-    puts '[*] Finished processing tweets'
+    logger.debug '[*] Finished processing tweets'
 
-    puts '[*] Processing direct messages'
+    logger.debug '[*] Processing direct messages'
     dms = client.direct_messages_received(since_id: since_id)
     dms.each do |dm|
         sender = dm.sender.screen_name
@@ -33,13 +33,13 @@ def process_incoming(handler, bot_name)
         created_at = dm.created_at.dup.localtime
         handler.handle(sender, 'twitter', text, created_at)
     end
-    puts '[*] Finished processing direct messages'
+    logger.debug '[*] Finished processing direct messages'
 
     update_config
 end
 
 def stream_incoming(handler, bot_name)
-    puts '[*] Streaming tweets and direct messages'
+    logger.debug '[*] Streaming tweets and direct messages'
     streaming do
         replies do |tweet|
             sender = tweet.user.screen_name
@@ -58,10 +58,11 @@ def stream_incoming(handler, bot_name)
             handler.handle(sender, 'twitter', text, created_at)
         end
     end
+    logger.debug 'Totes getting rate limited??'
 end
 
 def process_outgoing(handler, dm_queue_interval)
-    puts '[*] Watching outgoing message queue'
+    logger.debug '[*] Watching outgoing message queue'
     second = 0
     loop do
         second += 1
@@ -83,10 +84,10 @@ outgoing_handler = OutgoingHandler.new(db, client)
 state = 0
 trap('SIGINT') do
     if state == STATE_RUNNING
-        puts '[!] Ctrl+C caught. Stopping gracefully.'
+        puts 'Ctrl+C caught. Stopping gracefully.'
         state = STATE_STOPPING
     elsif state == STATE_STOPPING
-        puts '[!!] Press Ctrl+C again to force immediate exit!'
+        puts 'Press Ctrl+C again to force immediate exit!'
         state = STATE_HALTING
     elsif state >= STATE_HALTING
         exit 0
@@ -124,13 +125,11 @@ begin
     threads.each(&:kill)
 rescue => e
     msg = "[!] Exception: #{e.class} - #{e}. Retry in #{config[:retry_interval]} seconds!\n#{e.backtrace.join("\n")}"
-    puts msg
     logger.warn msg
     config[:retry_interval].downto(1) do |s|
         sleep 1
         if s % 30 == 0
             msg = "[.] Retry in #{s} seconds"
-            puts msg
             logger.warn msg
         end
 

@@ -1,4 +1,5 @@
 require 'logger'
+require_relative 'multi_delegator'
 
 module Logging
   def logger
@@ -14,7 +15,9 @@ module Logging
     end
 
     def configure_logger_for(classname)
-      logger = Logger.new(File.dirname(__FILE__) + '/../bot.log', 'weekly')
+      log_file = File.open("#{__dir__}/../bot.log", 'a')
+      #logger = Logger.new(MultiDelegator.delegate(:write, :close).to(STDOUT, log_file), 'weekly')
+      logger = Logger.new("#{__dir__}/../bot.log", 'weekly')
       logger.progname = classname
       logger
     end
