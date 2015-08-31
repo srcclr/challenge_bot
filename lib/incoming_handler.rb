@@ -63,14 +63,8 @@ class IncomingHandler
         end
 
         challenge = @db.get_challenge(challenge_name)
-        if challenge.nil?
+        if challenge.nil? || challenge[:date_begin] > Date.today
             send_unknown_challenge(username, user_type, challenge_name)
-            return
-        end
-
-        if challenge[:date_begin] > Date.today
-            msg = "#{challenge_name} has not started. begins #{challenge[:date_begin]}"
-            @db.queue_dm(username, user_type, msg)
             return
         end
 
@@ -87,15 +81,9 @@ class IncomingHandler
     end
 
     def check_answer(username, user_type, challenge_name)
-        challenge = @db.get_challenge(challenge_name)
-        if challenge.nil?
+        challenge = @db.get_challenge(challenge_name) || challenge[:date_begin] > Date.today
+        if challenge.nil? || challenge[:date_begin] > Date.today
             send_unknown_challenge(username, user_type, challenge_name)
-            return
-        end
-
-        if challenge[:date_begin] > Date.today
-            msg = "#{challenge_name} has not started. begins #{challenge[:date_begin]}"
-            @db.queue_dm(username, user_type, msg)
             return
         end
 
@@ -119,7 +107,7 @@ class IncomingHandler
 
     def get_challenge_info(username, user_type, challenge_name)
         challenge = @db.get_challenge(challenge_name)
-        if challenge.nil?
+        if challenge.nil? || challenge[:date_begin] > Date.today
             send_unknown_challenge(username, user_type, challenge_name)
             return
         end
