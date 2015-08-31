@@ -122,8 +122,7 @@ class IncomingHandler
 
     def send_unknown_challenge(username, user_type, challenge_name)
         # Don't respond with arbitrary, attacker-controlled data like challenge_name.
-        # After this check, it's known to exist and is safe to emit.
-        msg = 'unknown challenge :( '[0..140]
+        msg = 'I do not know of that challenge.'[0..140]
         @db.queue_dm(username, user_type, msg)
     end
 
