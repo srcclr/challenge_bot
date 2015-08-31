@@ -122,7 +122,13 @@ class IncomingHandler
 
     def send_unknown_challenge(username, user_type, challenge_name)
         # Don't respond with arbitrary, attacker-controlled data like challenge_name.
-        msg = 'I do not know of that challenge.'[0..140]
+        messages = ['I do not know of that challenge.', 'Sorry, that challenge does not exist.',
+            'Unknown challenge.', 'That challenge is unknown.', 'I am not aware of that challenge.',
+            'The challenge you provide does not seem to exist, sorry.']
+        msg = messages.sample(1).first
+
+        # Only needed if challenge_name is included in message
+        #msg = msg[0..140]
         @db.queue_dm(username, user_type, msg)
     end
 
