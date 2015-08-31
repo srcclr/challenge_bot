@@ -8,6 +8,9 @@ include Logging
 
 #debug_mode
 HEARTBEAT_INTERVAL = 60 * 60 # Every hour
+STATE_RUNNING = 0
+STATE_STOPPING = 1
+STATE_HALTING = 2
 
 def process_incoming(handler, bot_name)
     puts 'Processing incoming tweets ...'
@@ -15,7 +18,6 @@ def process_incoming(handler, bot_name)
         text = tweet.text
         sender = tweet.user.screen_name
         next if sender.eql?(bot_name)
-        #client.follow(sender)
         handler.handle(sender, 'twitter', text)
     end
 
@@ -26,7 +28,6 @@ def process_incoming(handler, bot_name)
         sender = m.sender.screen_name
         since_id m.id if since_id.nil? || m.id > since_id
         next if sender.eql?(bot_name)
-        #client.follow(sender)
         handler.handle(sender, 'twitter', text)
     end
 
@@ -40,7 +41,6 @@ def stream_incoming(handler, bot_name)
             text = tweet.text
             sender = tweet.user.screen_name
             next if sender.eql?(bot_name)
-            #client.follow(sender)
             handler.handle(sender, 'twitter', text)
         end
 
@@ -49,7 +49,6 @@ def stream_incoming(handler, bot_name)
             sender = m.sender.screen_name
             since_id m.id if since_id.nil? || m.id > since_id
             next if sender.eql?(bot_name)
-            #client.follow(sender)
             handler.handle(sender, 'twitter', text)
         end
     end
@@ -70,19 +69,20 @@ def process_outgoing(handler, dm_queue_interval)
     end
 end
 
+
 db = DB.new
 incoming_handler = IncomingHandler.new(db)
 outgoing_handler = OutgoingHandler.new(db, client)
 
-stopped = 0
+state = 0
 trap('SIGINT') do
-    if stopped == 0
+    if state == STATE_RUNNING
         puts 'Ctrl+C caught. Stopping gracefully.'
-        stopped += 1
-    elsif stopped == 1
+        state = STATE_STOPPING
+    elsif state == STATE_STOPPING
         puts 'Press Ctrl+C again to force immediate exit!'
-        stopped += 1
-    elsif stopped > 1
+        state = STATE_HALTING
+    elsif state >= STATE_HALTING
         exit 0
     end
 end
@@ -111,14 +111,13 @@ begin
             update_config
         end
 
-        break if stopped > 0
+        break if state > STATE_RUNNING
         sleep 1
     end
 
     threads.each(&:kill)
 rescue => e
     msg = "Exception: #{e.class} - #{e}. Retry in #{config[:retry_interval]} seconds!\n#{e.backtrace.join("\n")}"
-    puts msg
     logger.warn msg
     config[:retry_interval].downto(1) do |s|
         sleep 1
@@ -128,12 +127,17 @@ rescue => e
             logger.warn msg
         end
 
-        break if stopped > 0
+        break if state != STATE_RUNNING
     end
-    retry unless stopped > 0
+
+    if state == STATE_RUNNING
+        threads.each(&:kill)
+        update_config
+        retry
+    end
 ensure
     logger.debug 'Saving configuration'
     update_config
 end
 
-logger.debug "Gracefully stopped ChallengeBot - #{config[:bot_name]}"
+logger.debug "Gracefully state ChallengeBot - #{config[:bot_name]}"
