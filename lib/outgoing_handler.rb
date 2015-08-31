@@ -36,5 +36,6 @@ class OutgoingHandler
     def send_email(username, message)
         # TODO: raise exception on failure
         logger.debug "Sending e-mail to #{username}: #{message}"
+        logger.warn "E-MAIL FUNCTIONALITY IS NOT IMPLEMENTED!"
     end
 end

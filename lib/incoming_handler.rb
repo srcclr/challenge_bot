@@ -69,7 +69,7 @@ class IncomingHandler
         end
 
         is_correct = check_submission(user[:code], challenge[:solutions], hash)
-        if challenge[:date_end] <= Date.today
+        if Date.today > challenge[:date_end]
             msg = "#{challenge_name} submission is #{is_correct ? 'CORRECT' : 'incorrect'}"
         else
             # Don't allow users to change submissions after challenge is complete.
@@ -87,7 +87,7 @@ class IncomingHandler
             return
         end
 
-        if challenge[:date_end] <= Date.today
+        if Date.today > challenge[:date_end]
             sub = @db.get_submission(username, user_type, challenge[:id])
             if sub
                 msg = "#{challenge_name} = #{sub[:hash]} and is #{sub[:is_correct] ? 'CORRECT' : 'incorrect'}"

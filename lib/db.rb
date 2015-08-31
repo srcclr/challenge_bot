@@ -9,7 +9,7 @@ class DB
     def initialize
         db_config = YAML::load_file(File.join(__dir__, '../challenge_bot.yml'))
         @conn = Sequel.connect(db_config[:db_uri])
-        Dir[File.dirname(__FILE__) + '/../models/*.rb'].each { |f| require f }
+        Dir["#{__dir__}/../models/*.rb"].each { |f| require f }
     end
 
     def get_config
