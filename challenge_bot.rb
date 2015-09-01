@@ -46,7 +46,7 @@ def stream_incoming(handler, bot_name)
             next if sender.eql?(bot_name)
             text = tweet.text
             created_at = tweet.created_at.dup.localtime
-            handler.handle(sender, 'twitter', text)
+            handler.handle(sender, 'twitter', text, created_at)
         end
 
         direct_message do |dm|
@@ -141,9 +141,9 @@ rescue => e
         update_config
         retry
     end
-ensure
-    logger.debug 'Saving configuration'
-    update_config
 end
 
-logger.debug "Gracefully state ChallengeBot - #{config[:bot_name]}"
+logger.debug 'Saving configuration'
+update_config
+
+logger.debug "Gracefully stopped ChallengeBot - #{config[:bot_name]}"
