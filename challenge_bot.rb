@@ -2,19 +2,22 @@
 
 require 'rubygems'
 require 'chatterbot/dsl'
-Dir[File.dirname(__FILE__) + '/lib/*.rb'].each { |f| require f }
+Dir["#{__dir__}/lib/*.rb"].each { |f| require f }
 
 include Logging
 
-#debug_mode
 HEARTBEAT_INTERVAL = 60 * 60 # Every hour
 STATE_RUNNING = 0
 STATE_STOPPING = 1
 STATE_HALTING = 2
 
+#debug_mode
+#verbose
+
 def process_incoming(handler, bot_name)
     logger.debug '[*] Processing tweets'
     replies do |tweet|
+        bot.update_since_id_reply(tweet)
         sender = tweet.user.screen_name
         next if sender.eql?(bot_name)
         text = tweet.text
@@ -25,9 +28,9 @@ def process_incoming(handler, bot_name)
 
     logger.debug '[*] Processing direct messages'
     dms = client.direct_messages_received(since_id: since_id)
-    dms.each do |dm|
-        sender = dm.sender.screen_name
+     dms.each do |dm|
         since_id(dm.id) if since_id.nil? || dm.id > since_id
+        sender = dm.sender.screen_name
         next if sender.eql?(bot_name)
         text = dm.text
         created_at = dm.created_at.dup.localtime
@@ -41,7 +44,10 @@ end
 def stream_incoming(handler, bot_name)
     logger.debug '[*] Streaming tweets and direct messages'
     streaming do
+        # WARNING: Errors here are silently swallowed and it kills streaming!
         replies do |tweet|
+            # replies _should_ handle this, but when streaming, it doesn't
+            bot.update_since_id_reply(tweet)
             sender = tweet.user.screen_name
             next if sender.eql?(bot_name)
             text = tweet.text
@@ -50,15 +56,15 @@ def stream_incoming(handler, bot_name)
         end
 
         direct_message do |dm|
-            sender = dm.sender.screen_name
+            # when streaming, need to set the id explicitly
             since_id(dm.id) if since_id.nil? || dm.id > since_id
+            sender = dm.sender.screen_name
             next if sender.eql?(bot_name)
             text = dm.text
             created_at = dm.created_at.dup.localtime
             handler.handle(sender, 'twitter', text, created_at)
         end
     end
-    logger.debug 'Totes getting rate limited??'
 end
 
 def process_outgoing(handler, dm_queue_interval)
@@ -75,7 +81,6 @@ def process_outgoing(handler, dm_queue_interval)
         sleep 1
     end
 end
-
 
 db = DB.new
 incoming_handler = IncomingHandler.new(db)
