@@ -1,3 +1,6 @@
 challenge_bot.yml
 bot.log
 secrets.txt
+.idea/**
+*.iml
+.rvmrc
